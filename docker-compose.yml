@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  backend:
+    container_name: fastAPI_bkV3
+    restart: always
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - custom
+
+  database:
+    container_name: postgres_dbV3
+    image: postgres:15.4-alpine
+    restart: always
+
+    ports: 
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=tapwd
+      - POSTGRES_DB=test_db
+    networks:
+      - custom
+
+networks:
+  custom:
+    driver: bridge
