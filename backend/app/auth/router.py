@@ -18,7 +18,7 @@ from .db import create_user_db
 from .db import save_tokens_db
 
 from .main import get_user
-from .main import is_role_owner
+from .main import has_role
 
 
 router = APIRouter(
@@ -31,7 +31,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @router.get("/resources/")
 def get_resource_data(
-        current_user: dict = Depends(is_role_owner('test1'))):
+        current_user: dict = Depends(has_role('test1'))):
     
     return {"message": "Welcome, resource owner!"}
 
@@ -79,7 +79,6 @@ async def login_user(
     try:
         user = await get_user_db(get_user.email, session)
     except AttributeError as ex:
-        print(ex)
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
 
@@ -116,7 +115,6 @@ async def update_token(
     try:
         db_data = await get_data_db(token.refresh_token, session)
     except AttributeError as ex:
-        print(ex)
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
     
