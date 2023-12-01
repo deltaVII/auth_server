@@ -4,20 +4,21 @@ from sqlalchemy.orm import joinedload
 
 from .models import User
 from .models import Refresh_token
-from .models import UserRole
-from .models import Role
+from .models import UserRole, Role
 
 
 async def add_user_role(
         user_data: str, 
         role: str, 
-        session: AsyncSession):
+        session: AsyncSession) -> None:
     
-    query = select(User).where(User.id == user_data['id'])
+    query = select(User)\
+        .where(User.id == user_data['id'])
     user = await session.execute(query)
     user = user.scalar()
     
-    query = select(Role).where(Role.role == role)
+    query = select(Role) \
+        .where(Role.role == role)
     role = await session.execute(query)
     role = role.scalar()
 
@@ -25,14 +26,22 @@ async def add_user_role(
         user_id=user.id,
         role_id=role.id
     )
-
     session.add(user_role)
     await session.commit()
 
 
 async def get_user_db(
         user_email: str, 
-        session: AsyncSession):
+        session: AsyncSession) -> dict:
+    
+    user_data = get_user_password_db(user_email, session)
+    user_data.pop('hashed_password')
+    return user_data
+
+
+async def get_user_password_db(
+        user_email: str, 
+        session: AsyncSession) -> dict:
     
     query = select(User).where(User.email == user_email)
     user = await session.execute(query)
@@ -49,9 +58,10 @@ async def get_user_db(
 
 async def get_user_roles_db(
         user_email: str, 
-        session: AsyncSession):
+        session: AsyncSession) -> dict:
     
-    query = select(User).where(User.email == user_email) \
+    query = select(User) \
+        .where(User.email == user_email) \
         .options(joinedload(User.roles))
     user = await session.execute(query)
     user = user.scalar()
@@ -78,13 +88,6 @@ async def create_user_db(
     session.add(user)
     await session.commit()
 
-    user_role = UserRole(
-        user_id=user.id,
-        role_id=1
-    )
-    session.add(user_role)
-    await session.commit()
-
 
 async def get_data_db(
         token: str, 
@@ -100,7 +103,6 @@ async def get_data_db(
 
     data = {
         'token': {
-            'id': db_token.id,
             'user_id': db_token.user_id,
             'token': db_token.token,
             'created_at': db_token.created_at,
@@ -124,9 +126,11 @@ async def save_tokens_db(
     query_insert = insert(Refresh_token) \
         .values(user_id=user_id, token=new_token)
     await session.execute(query_insert)
+
     if old_token is not None:
         query_update = update(Refresh_token) \
             .where(Refresh_token.token == old_token) \
             .values(is_relevant=False)
         await session.execute(query_update)
+
     await session.commit()

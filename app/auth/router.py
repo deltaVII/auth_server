@@ -1,25 +1,19 @@
-from fastapi import APIRouter
-from fastapi import Depends
+from fastapi import APIRouter, Depends
 from fastapi import HTTPException
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
 from ..database import get_async_session
-from .jwt import create_tokens
-from .jwt import verify_jwt_token
-from .schemas import CreateUser
-from .schemas import LoginUser
+from .jwt import create_tokens, verify_jwt_token
+from .schemas import CreateUser, LoginUser
 from .schemas import RefreshToken
-from .db import add_user_role
-from .db import get_data_db
-from .db import get_user_db
-from .db import create_user_db
-from .db import save_tokens_db
+from .db import get_data_db, get_user_password_db
+from .db import create_user_db, save_tokens_db
 
-from .main import get_user
-from .main import has_role
-
+'''
+Необходимые эндпоинты для авторизации
+'''
 
 router = APIRouter(
     prefix="/auth",
@@ -27,28 +21,6 @@ router = APIRouter(
 )
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-@router.get("/resources/")
-def get_resource_data(
-        current_user: dict = Depends(has_role('test1'))):
-    
-    return {"message": "Welcome, resource owner!"}
-
-@router.get("/users/me")
-async def get_user_me(
-        current_user: dict = Depends(get_user)):
-    
-    return current_user
-
-@router.get("/users/role")
-async def get_user_me(
-        role: str, 
-        current_user: dict = Depends(get_user), 
-        session: AsyncSession = Depends(get_async_session)):
-    
-    await add_user_role(current_user, role, session)
-    return {'status': '200'}
 
 
 @router.post("/register")
@@ -77,7 +49,7 @@ async def login_user(
         session: AsyncSession = Depends(get_async_session)):
     
     try:
-        user = await get_user_db(get_user.email, session)
+        user = await get_user_password_db(get_user.email, session)
     except AttributeError as ex:
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
@@ -115,6 +87,7 @@ async def update_token(
     try:
         db_data = await get_data_db(token.refresh_token, session)
     except AttributeError as ex:
+        print(ex)
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
     

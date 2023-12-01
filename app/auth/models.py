@@ -1,15 +1,11 @@
 from datetime import datetime
 
-from sqlalchemy import Table
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import TIMESTAMP
-from sqlalchemy import ForeignKey
-from sqlalchemy import JSON
-from sqlalchemy import Boolean
+from sqlalchemy import Table, Column
 from sqlalchemy import MetaData
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import Integer, String
+from sqlalchemy import TIMESTAMP, ForeignKey
+from sqlalchemy import Boolean
+
 from sqlalchemy.orm import relationship
 
 from ..database import Base
@@ -43,9 +39,8 @@ user_role = Table(
 refresh_token = Table(
     'refresh_token',
     metadata,
-    Column('id', Integer, primary_key=True),
     Column('user_id', Integer, ForeignKey(user.c.id)),
-    Column('token', String, nullable=False),
+    Column('token', String, nullable=False, primary_key=True),
     Column('created_at', TIMESTAMP, default=datetime.utcnow),
     Column('is_relevant', Boolean, default=True)
 )
@@ -86,9 +81,8 @@ class UserRole(Base):
 class Refresh_token(Base):
     __tablename__ = 'refresh_token'
 
-    id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('user.id'))
-    token = Column(String, nullable=False)
+    token = Column(String, nullable=False, primary_key=True)
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
     is_relevant = Column(Boolean, default=True)
 

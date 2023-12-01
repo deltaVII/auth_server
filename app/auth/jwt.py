@@ -2,7 +2,8 @@ import jwt
 from datetime import datetime
 from datetime import timedelta
 
-SECRET_KEY = "my_secret_key"
+from config import SECRET_KEY
+
 ALGORITHM = "HS256"
 EXPIRATION_TIME = {'access_token': timedelta(minutes=30), 'refresh_token': timedelta(days=30)}
 
