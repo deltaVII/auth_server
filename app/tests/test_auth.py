@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.main import has_user_role, get_user
+from ..auth.db import add_user_role
+from ..database import get_async_session
 
 router = APIRouter(
-    prefix="/test",
+    prefix="/test_auth",
     tags=["Test"]
 )
 
@@ -19,3 +22,12 @@ async def get_user_me(
 
     return current_user
 
+@router.post("/add_role")
+async def get_user_me(
+        role: str,
+        current_user: dict = Depends(get_user),
+        session: AsyncSession = Depends(get_async_session)):
+    
+    add_user_role(current_user, role, session)
+
+    return {"status": "200"}

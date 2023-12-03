@@ -31,7 +31,7 @@ async def register_user(
     hashed_password = pwd_context.hash(new_user.password)
     user_data = new_user.dict()
     user_data['hashed_password'] = hashed_password
-    try:
+    try: # отрабатывает если email уже зарегистрирован
         await create_user_db(
             user_data,
             session
@@ -84,15 +84,15 @@ async def update_token(
         raise HTTPException(
             status_code=400, detail="Incorrect token")
     
-    try:
+    try: # отрабатывает если был введен неверный токен с верным ключем
         db_data = await get_data_db(token.refresh_token, session)
-    except AttributeError as ex:
+    except AttributeError as ex: 
         print(ex)
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
     
     db_token = db_data['token']
-    if db_token is None or not db_token['is_relevant']:
+    if not db_token['is_relevant']:
         raise HTTPException(
             status_code=400, detail="Incorrect token")
 

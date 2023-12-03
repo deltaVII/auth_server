@@ -7,34 +7,11 @@ from .models import Refresh_token
 from .models import UserRole, Role
 
 
-async def add_user_role(
-        user_data: str, 
-        role: str, 
-        session: AsyncSession) -> None:
-    
-    query = select(User)\
-        .where(User.id == user_data['id'])
-    user = await session.execute(query)
-    user = user.scalar()
-    
-    query = select(Role) \
-        .where(Role.role == role)
-    role = await session.execute(query)
-    role = role.scalar()
-
-    user_role = UserRole(
-        user_id=user.id,
-        role_id=role.id
-    )
-    session.add(user_role)
-    await session.commit()
-
-
 async def get_user_db(
         user_email: str, 
         session: AsyncSession) -> dict:
     
-    user_data = get_user_password_db(user_email, session)
+    user_data = await get_user_password_db(user_email, session)
     user_data.pop('hashed_password')
     return user_data
 
@@ -123,10 +100,11 @@ async def save_tokens_db(
         user_id: int, 
         session: AsyncSession) -> None:
 
-    query_insert = insert(Refresh_token) \
-        .values(user_id=user_id, token=new_token)
-    await session.execute(query_insert)
-
+    new_token_ = Refresh_token(
+        user_id=user_id,
+        token=new_token
+    )
+    session.add(new_token_)
     if old_token is not None:
         query_update = update(Refresh_token) \
             .where(Refresh_token.token == old_token) \
@@ -134,3 +112,37 @@ async def save_tokens_db(
         await session.execute(query_update)
 
     await session.commit()
+
+
+async def add_user_role(
+        user_data: str, 
+        role: str, 
+        session: AsyncSession) -> None:
+    
+    query = select(User) \
+        .where(User.id == user_data['id'])
+    user = await session.execute(query)
+    user = user.scalar()
+    
+    query = select(Role) \
+        .where(Role.role == role)
+    role_ = await session.execute(query)
+    role_ = role_.scalar()
+
+    user_role = UserRole(
+        user_id=user.id,
+        role_id=role_.id
+    )
+    session.add(user_role)
+    await session.commit()
+
+
+async def add_role(
+        role: str,
+        session: AsyncSession) -> None:
+    
+    new_role = Role(role=role)
+    
+    session.add(new_role)
+    await session.commit()
+    

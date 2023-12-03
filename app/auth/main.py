@@ -33,6 +33,7 @@ async def get_user(
     try:
         user = await get_user_db(decoded_data["email"], session)
     except AttributeError as ex:
+        print(ex)
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
     if not user:
