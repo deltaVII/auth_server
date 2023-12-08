@@ -4,7 +4,7 @@ services:
     container_name: fastAPI_bkV3
     restart: always
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     ports:
       - "8000:8000"

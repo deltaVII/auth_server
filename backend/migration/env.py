@@ -7,7 +7,7 @@ from alembic import context
 
 
 from config import DB_URL
-from app.auth.models import metadata as metadata_auth
+from models.auth import metadata as metadata_auth
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

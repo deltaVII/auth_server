@@ -119,18 +119,13 @@ async def add_user_role(
         role: str, 
         session: AsyncSession) -> None:
     
-    query = select(User) \
-        .where(User.id == user_data['id'])
-    user = await session.execute(query)
-    user = user.scalar()
-    
     query = select(Role) \
         .where(Role.role == role)
     role_ = await session.execute(query)
     role_ = role_.scalar()
 
     user_role = UserRole(
-        user_id=user.id,
+        user_id=user_data['id'],
         role_id=role_.id
     )
     session.add(user_role)
