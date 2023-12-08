@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   backend:
-    container_name: fastAPI_bkV3
+    container_name: fastAPI_bk
     restart: always
     build:
       context: ./backend
@@ -12,7 +12,7 @@ services:
       - custom
 
   database:
-    container_name: postgres_dbV3
+    container_name: postgres_db
     image: postgres:15.4-alpine
     restart: always
 

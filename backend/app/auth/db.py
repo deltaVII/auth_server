@@ -1,6 +1,7 @@
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
 
 from .models import User
 from .models import Refresh_token
@@ -24,6 +25,9 @@ async def get_user_password_db(
     user = await session.execute(query)
     user = user.scalar()
     
+    if user is None:
+        raise ValueError(f'user with the email:{user_email} was not found')
+
     data = {
         'id': user.id,
         'username': user.username,
@@ -42,6 +46,9 @@ async def get_user_roles_db(
         .options(joinedload(User.roles))
     user = await session.execute(query)
     user = user.scalar()
+
+    if user is None:
+        raise ValueError(f'user with the email:{user_email} is not found')
     
     data = {
         'id': user.id,
@@ -57,14 +64,17 @@ async def create_user_db(
         user_data: dict, 
         session: AsyncSession) -> None:
     
+
     user = User(        
         username=user_data['username'], 
         email=user_data['email'], 
         hashed_password=user_data['hashed_password']
     )
     session.add(user)
-    await session.commit()
-
+    try:
+        await session.commit()
+    except IntegrityError:
+        raise ValueError(f'Email:{user_data["email"]} already registered')
 
 async def get_data_db(
         token: str, 
@@ -76,7 +86,7 @@ async def get_data_db(
     db_token = await session.execute(query)
     db_token = db_token.scalar()
     if db_token is None:
-        return
+        raise ValueError(f'token:{token} is not found')
 
     data = {
         'token': {

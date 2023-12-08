@@ -36,8 +36,7 @@ async def register_user(
             user_data,
             session
         )
-    except IntegrityError as ex:
-        print(ex)
+    except ValueError:
         raise HTTPException(
             status_code=409, detail="Email already registered")
     return {"status": "200"}
@@ -48,9 +47,9 @@ async def login_user(
         get_user: LoginUser, 
         session: AsyncSession = Depends(get_async_session)):
     
-    try:
+    try: # отрабатывает если были введены неверные данные
         user = await get_user_password_db(get_user.email, session)
-    except AttributeError as ex:
+    except ValueError as ex:
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
 
@@ -86,8 +85,7 @@ async def update_token(
     
     try: # отрабатывает если был введен неверный токен с верным ключем
         db_data = await get_data_db(token.refresh_token, session)
-    except AttributeError as ex: 
-        print(ex)
+    except ValueError as ex: 
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
     

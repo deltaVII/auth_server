@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.main import has_user_role, get_user
-from ..auth.db import add_user_role
+from ..auth.db import add_user_role, get_user_db
 from ..database import get_async_session
 
 router = APIRouter(
@@ -31,3 +31,11 @@ async def get_user_me(
     add_user_role(current_user, role, session)
 
     return {"status": "200"}
+
+@router.get("/test")
+async def get_user_me(
+        email: str = 'ssuser@example.com', 
+        session: AsyncSession = Depends(get_async_session)):
+
+    q=await get_user_db(email, session)
+    return q

@@ -2,6 +2,9 @@ import typing
 import sys
 
 import uvicorn
+import alembic
+
+alembic.context
 
 # "uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"
 try:

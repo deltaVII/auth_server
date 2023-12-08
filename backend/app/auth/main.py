@@ -26,19 +26,15 @@ async def get_user(
         session: AsyncSession = Depends(get_async_session)) -> dict:
     
     decoded_data = verify_jwt_token(token.access_token)
-    if not decoded_data:
+    if decoded_data is None:
         raise HTTPException(
             status_code=400, detail="Invalid token")
     
     try:
         user = await get_user_db(decoded_data["email"], session)
-    except AttributeError as ex:
-        print(ex)
+    except ValueError:
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
-    if not user:
-        raise HTTPException(
-            status_code=400, detail="User not found")
     return user
 
 
@@ -47,18 +43,15 @@ async def get_user_role(
         session: AsyncSession = Depends(get_async_session)) -> dict:
     
     decoded_data = verify_jwt_token(token.access_token)
-    if not decoded_data:
+    if decoded_data is None:
         raise HTTPException(
             status_code=400, detail="Invalid token")
     
     try:
         user = await get_user_roles_db(decoded_data["email"], session)
-    except AttributeError:
+    except ValueError:
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
-    if not user:
-        raise HTTPException(
-            status_code=400, detail="User not found")
     return user
 
 
