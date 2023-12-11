@@ -4,7 +4,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 
 from .models import User
-from .models import Refresh_token
+from .models import UserSession
 from .models import UserRole, Role
 
 
@@ -63,7 +63,6 @@ async def get_user_roles_db(
 async def create_user_db(
         user_data: dict, 
         session: AsyncSession) -> None:
-    
 
     user = User(        
         username=user_data['username'], 
@@ -80,9 +79,9 @@ async def get_data_db(
         token: str, 
         session: AsyncSession) -> dict:
     
-    query = select(Refresh_token) \
-        .join(User, User.id==Refresh_token.user_id) \
-        .filter(Refresh_token.token == token)
+    query = select(UserSession) \
+        .join(User, User.id==UserSession.user_id) \
+        .filter(UserSession.token == token)
     db_token = await session.execute(query)
     db_token = db_token.scalar()
     if db_token is None:
@@ -93,7 +92,7 @@ async def get_data_db(
             'user_id': db_token.user_id,
             'token': db_token.token,
             'created_at': db_token.created_at,
-            'is_relevant': db_token.is_relevant,
+            'update_at': db_token.update_at,
         },
         'user': {
             'id': db_token.user.id,
@@ -104,22 +103,28 @@ async def get_data_db(
     return data
 
 
-async def save_tokens_db(
+async def update_user_session_db(
         old_token: str, 
         new_token: str, 
+        session: AsyncSession) -> None:
+
+    query_update = update(UserSession) \
+        .where(UserSession.token == old_token) \
+        .values(token=new_token)
+    await session.execute(query_update)
+
+    await session.commit()
+
+async def create_user_session_db(
+        token: str, 
         user_id: int, 
         session: AsyncSession) -> None:
 
-    new_token_ = Refresh_token(
+    new_token = UserSession(
+        token=token,
         user_id=user_id,
-        token=new_token
     )
-    session.add(new_token_)
-    if old_token is not None:
-        query_update = update(Refresh_token) \
-            .where(Refresh_token.token == old_token) \
-            .values(is_relevant=False)
-        await session.execute(query_update)
+    session.add(new_token)
 
     await session.commit()
 

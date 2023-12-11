@@ -9,7 +9,8 @@ from .jwt import create_tokens, verify_jwt_token
 from .schemas import CreateUser, LoginUser
 from .schemas import RefreshToken
 from .db import get_data_db, get_user_password_db
-from .db import create_user_db, save_tokens_db
+from .db import create_user_db
+from .db import update_user_session_db, create_user_session_db
 
 '''
 Необходимые эндпоинты для авторизации
@@ -62,9 +63,8 @@ async def login_user(
     
     refresh_token, access_token = create_tokens(user)
 
-    await save_tokens_db(
-        old_token=None,
-        new_token=refresh_token,
+    await create_user_session_db(
+        token=refresh_token,
         user_id=user['id'],
         session=session
     )
@@ -90,15 +90,11 @@ async def update_token(
             status_code=400, detail="Incorrect username or password")
     
     db_token = db_data['token']
-    if not db_token['is_relevant']:
-        raise HTTPException(
-            status_code=400, detail="Incorrect token")
 
     refresh_token, access_token = create_tokens(db_data["user"])
-    await save_tokens_db(
+    await update_user_session_db(
         old_token=db_token['token'],
         new_token=refresh_token,
-        user_id=db_token['user_id'],
         session=session
     )
     return {"refresh_token": refresh_token, 

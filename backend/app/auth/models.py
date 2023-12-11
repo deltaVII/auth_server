@@ -13,7 +13,6 @@ from ..database import Base
 
 metadata = MetaData()
 
-
 user = Table(
     'user',
     metadata,
@@ -37,13 +36,13 @@ user_role = Table(
     Column('role_id', Integer(), ForeignKey("role.id"), primary_key=True)
 )
 
-refresh_token = Table(
-    'refresh_token',
+user_session = Table(
+    'user_session',
     metadata,
     Column('user_id', Integer, ForeignKey(user.c.id)),
     Column('token', String, nullable=False, primary_key=True),
     Column('created_at', TIMESTAMP, default=datetime.utcnow),
-    Column('is_relevant', Boolean, default=True)
+    Column('update_at', TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow),
 )
 
 
@@ -79,13 +78,13 @@ class UserRole(Base):
     user_id = Column(Integer(), ForeignKey("user.id"), primary_key=True)
     role_id = Column(Integer(), ForeignKey("role.id"), primary_key=True)
 
-class Refresh_token(Base):
-    __tablename__ = 'refresh_token'
+class UserSession(Base):
+    __tablename__ = 'user_session'
 
     token = Column(String, nullable=False, primary_key=True)
     user_id = Column(Integer, ForeignKey('user.id'))
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
-    is_relevant = Column(Boolean, default=True)
+    update_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship(
         'User', 
