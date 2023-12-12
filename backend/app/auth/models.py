@@ -88,7 +88,7 @@ class UserSession(Base):
 
     user = relationship(
         'User', 
-        backref='Refresh_tokens', 
+        backref='sessions', 
         lazy='selectin',
     )
 
