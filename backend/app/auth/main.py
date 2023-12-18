@@ -1,4 +1,6 @@
-from fastapi import Depends
+from typing import Annotated
+
+from fastapi import Depends, Header
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,9 +14,9 @@ from .db import get_user_db, get_user_roles_db
 '''
 
 async def verify_token(
-        token: AccessToken) -> dict:
-    
-    decoded_data = verify_jwt_token(token.access_token)
+        Authorization: str|None = Header()) -> dict:
+
+    decoded_data = verify_jwt_token(Authorization.split()[1])
     if decoded_data is None:
         raise HTTPException(
             status_code=400, detail="Invalid token")
@@ -22,16 +24,11 @@ async def verify_token(
 
 
 async def get_user(
-        token: AccessToken, 
+        token_data: dict = Depends(verify_token), 
         session: AsyncSession = Depends(get_async_session)) -> dict:
     
-    decoded_data = verify_jwt_token(token.access_token)
-    if decoded_data is None:
-        raise HTTPException(
-            status_code=400, detail="Invalid token")
-    
     try:
-        user = await get_user_db(decoded_data["email"], session)
+        user = await get_user_db(token_data["email"], session)
     except ValueError:
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")
@@ -39,16 +36,11 @@ async def get_user(
 
 
 async def get_user_role(
-        token: AccessToken, 
+        token_data: dict = Depends(verify_token), 
         session: AsyncSession = Depends(get_async_session)) -> dict:
     
-    decoded_data = verify_jwt_token(token.access_token)
-    if decoded_data is None:
-        raise HTTPException(
-            status_code=400, detail="Invalid token")
-    
     try:
-        user = await get_user_roles_db(decoded_data["email"], session)
+        user = await get_user_roles_db(token_data["email"], session)
     except ValueError:
         raise HTTPException(
             status_code=400, detail="Incorrect username or password")

@@ -40,7 +40,7 @@ async def register_user(
     except ValueError:
         raise HTTPException(
             status_code=409, detail="Email already registered")
-    return {"status": "200"}
+    return {"status": "201"}
 
 
 @router.post("/login")
@@ -87,7 +87,7 @@ async def update_token(
         db_data = await get_data_db(token.refresh_token, session)
     except ValueError as ex: 
         raise HTTPException(
-            status_code=400, detail="Incorrect username or password")
+            status_code=400, detail="Incorrect token")
     
     db_token = db_data['token']
 
