@@ -22,13 +22,13 @@ def verify_jwt_token(token: str):
     
 def create_tokens(user: dict) -> list[dict]:
     new_refresh_token = create_jwt_token({
-        'iser_id': user['id'],
+        'user_id': user['id'],
         'username': user['username'],                   
         'email': user['email'],
         'type': 'refresh_token',
     })
     new_access_token = create_jwt_token({
-        'iser_id': user['id'],
+        'user_id': user['id'],
         'username': user['username'],                   
         'email': user['email'],
         'type': 'access_token',

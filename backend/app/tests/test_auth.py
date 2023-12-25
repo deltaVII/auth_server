@@ -1,41 +1,53 @@
 from fastapi import APIRouter, Depends
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.main import has_user_role, get_user, verify_token
-from ..auth.db import add_user_role, get_user_db
+from ..auth.db import add_user_role as add_user_role_db
+from ..auth.db import add_role as add_role_db
 from ..database import get_async_session
 
 router = APIRouter(
-    prefix="/test_auth",
-    tags=["Test"]
+    prefix='/test_auth',
+    tags=['Test']
 )
 
-@router.get("/has_role/")
-def get_resource_data(
-        current_user: dict = Depends(has_user_role('test1'))):
+@router.get('/has_role/')
+async def get_resource_data(
+        current_user: dict = Depends(has_user_role('test_role'))):
 
-    return {"message": "Welcome, resource owner!"}
+    return {'message': 'Welcome, test_role!'}
 
-@router.get("/me")
+@router.get('/me')
 async def get_user_me(
         current_user: dict = Depends(get_user)):
 
     return current_user
 
-@router.post("/add_role")
+@router.get('/verify')
+async def get_user_me(
+        current_user: dict = Depends(verify_token)):
+
+    return current_user
+
+@router.post('/add_user_role')
 async def get_user_me(
         role: str,
         current_user: dict = Depends(get_user),
         session: AsyncSession = Depends(get_async_session)):
     
-    add_user_role(current_user, role, session)
+    try:
+        await add_user_role_db(current_user, role, session)
+    except ValueError:
+        raise HTTPException(
+            status_code=400, detail='Incorrect role')
+    return {'status': '200'}
 
-    return {"status": "200"}
-
-@router.get("/test")
+@router.post('/add_role')
 async def get_user_me(
-        email: str = 'ssuser@example.com', 
+        role: str,
         session: AsyncSession = Depends(get_async_session)):
+    
+    await add_role_db(role, session)
 
-    q=await get_user_db(email, session)
-    return q
+    return {'status': '200'}

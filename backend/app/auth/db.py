@@ -8,16 +8,16 @@ from .models import UserSession
 from .models import UserRole, Role
 
 
-async def get_user_db(
+async def get_user(
         user_email: str, 
         session: AsyncSession) -> dict:
     
-    user_data = await get_user_password_db(user_email, session)
+    user_data = await get_user_password(user_email, session)
     user_data.pop('hashed_password')
     return user_data
 
 
-async def get_user_password_db(
+async def get_user_password(
         user_email: str, 
         session: AsyncSession) -> dict:
     
@@ -37,7 +37,7 @@ async def get_user_password_db(
     return data
 
 
-async def get_user_roles_db(
+async def get_user_roles(
         user_email: str, 
         session: AsyncSession) -> dict:
     
@@ -60,7 +60,7 @@ async def get_user_roles_db(
     return data
 
 
-async def create_user_db(
+async def create_user(
         user_data: dict, 
         session: AsyncSession) -> None:
 
@@ -75,7 +75,7 @@ async def create_user_db(
     except IntegrityError:
         raise ValueError(f'Email:{user_data["email"]} already registered')
 
-async def get_data_db(
+async def get_session_with_user(
         token: str, 
         session: AsyncSession) -> dict:
     
@@ -88,7 +88,7 @@ async def get_data_db(
         raise ValueError(f'token:{token} is not found')
 
     data = {
-        'token': {
+        'session': {
             'user_id': db_token.user_id,
             'token': db_token.token,
             'created_at': db_token.created_at,
@@ -103,7 +103,7 @@ async def get_data_db(
     return data
 
 
-async def update_user_session_db(
+async def update_user_session(
         old_token: str, 
         new_token: str, 
         session: AsyncSession) -> None:
@@ -115,7 +115,7 @@ async def update_user_session_db(
 
     await session.commit()
 
-async def create_user_session_db(
+async def create_user_session(
         token: str, 
         user_id: int, 
         session: AsyncSession) -> None:
@@ -139,12 +139,16 @@ async def add_user_role(
     role_ = await session.execute(query)
     role_ = role_.scalar()
 
+    if role_ is None:
+        raise ValueError(f'role:{role} is not found')
+
     user_role = UserRole(
         user_id=user_data['id'],
         role_id=role_.id
     )
     session.add(user_role)
     await session.commit()
+    print(role_, user_role)
 
 
 async def add_role(

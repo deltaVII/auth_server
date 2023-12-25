@@ -22,6 +22,16 @@ user = Table(
     Column('hashed_password', String, nullable=False),
 )
 
+user_session = Table(
+    'user_session',
+    metadata,
+    Column('user_id', Integer, ForeignKey('user.id')),
+    Column('token', String, nullable=False, primary_key=True),
+    Column('created_at', TIMESTAMP, default=datetime.utcnow),
+    Column('update_at', TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow),
+)
+
+
 role = Table(
     'role',
     metadata,
@@ -32,17 +42,8 @@ role = Table(
 user_role = Table(
     'user_role',
     metadata,
-    Column('user_id', Integer(), ForeignKey("user.id"), primary_key=True),
-    Column('role_id', Integer(), ForeignKey("role.id"), primary_key=True)
-)
-
-user_session = Table(
-    'user_session',
-    metadata,
-    Column('user_id', Integer, ForeignKey(user.c.id)),
-    Column('token', String, nullable=False, primary_key=True),
-    Column('created_at', TIMESTAMP, default=datetime.utcnow),
-    Column('update_at', TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow),
+    Column('user_id', Integer(), ForeignKey('user.id'), primary_key=True),
+    Column('role_id', Integer(), ForeignKey('role.id'), primary_key=True)
 )
 
 
@@ -56,27 +57,9 @@ class User(Base):
 
     roles = relationship(
         'Role',
-        secondary="user_role",
-        back_populates="users",
+        secondary='user_role',
+        back_populates='users',
     )
-
-class Role(Base):
-    __tablename__ = 'role'
-    
-    id = Column(Integer, primary_key=True)
-    role = Column(String, nullable=False)
-
-    users = relationship(
-        'User',
-        secondary="user_role",
-        back_populates="roles",
-    )
-
-class UserRole(Base):
-    __tablename__ = 'user_role'
-
-    user_id = Column(Integer(), ForeignKey("user.id"), primary_key=True)
-    role_id = Column(Integer(), ForeignKey("role.id"), primary_key=True)
 
 class UserSession(Base):
     __tablename__ = 'user_session'
@@ -92,3 +75,21 @@ class UserSession(Base):
         lazy='selectin',
     )
 
+
+class Role(Base):
+    __tablename__ = 'role'
+    
+    id = Column(Integer, primary_key=True)
+    role = Column(String, nullable=False)
+
+    users = relationship(
+        'User',
+        secondary='user_role',
+        back_populates='roles',
+    )
+
+class UserRole(Base):
+    __tablename__ = 'user_role'
+
+    user_id = Column(Integer(), ForeignKey('user.id'), primary_key=True)
+    role_id = Column(Integer(), ForeignKey('role.id'), primary_key=True)
