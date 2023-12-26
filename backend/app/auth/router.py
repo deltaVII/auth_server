@@ -19,7 +19,7 @@ from .db import get_user_session as get_user_session_db
 from .db import update_user_session as update_user_session_db
 from .db import create_user_session as create_user_session_db
 from .db import delete_user_session as delete_user_session_db
-
+from .main import verify_token
 
 
 '''
@@ -80,7 +80,8 @@ async def login_user(
         session=session
     )
 
-    response.set_cookie(key='session', value=refresh_token, httponly=True)
+    response.set_cookie(key='session', value=refresh_token, 
+                        httponly=True, max_age=60*60*24*30)
     return {
         'session': {
             'token': refresh_token,
@@ -98,6 +99,9 @@ async def update_session(
         db_session: AsyncSession = Depends(get_db_session)):
     
     user_session = session # т.к. кука называется "session"
+    if user_session is None:
+        raise HTTPException(
+            status_code=400, detail='Incorrect token')
     try:
         token_data = verify_refresh_token(user_session)
     except jwt.ExpiredSignatureError:
@@ -125,7 +129,8 @@ async def update_session(
         session=db_session
     )
 
-    response.set_cookie(key='session', value=refresh_token, httponly=True)
+    response.set_cookie(key='session', value=refresh_token, 
+                        httponly=True, max_age=60*60*24*30)
     return {
         'session': {
             'token': refresh_token,
@@ -136,6 +141,20 @@ async def update_session(
     }
 
 
+@router.delete('/token')
+async def logout(
+        response: Response,
+        session: str | None = Cookie(default=None),
+        db_session: AsyncSession = Depends(get_db_session)):
+    
+    user_session = session # т.к. кука называется "session"
+    if user_session is None:
+        raise HTTPException(
+            status_code=400, detail='Incorrect token')
+    
+    await delete_user_session_db(user_session, db_session)
+    response.delete_cookie(key='session')
 
-
+    return {'status': '200'}
+    
 
