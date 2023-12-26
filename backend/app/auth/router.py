@@ -1,18 +1,25 @@
+import jwt
+
 from fastapi import APIRouter, Depends
+from fastapi import Cookie, Response
+Response
 from fastapi import HTTPException
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from ..database import get_async_session
-from .jwt import create_tokens, verify_jwt_token
+from ..database import get_session as get_db_session
+from .jwt import create_tokens, verify_refresh_token
 from .schemas import CreateUser, LoginUser
 from .schemas import RefreshToken
 from .db import get_session_with_user as get_data_db
 from .db import get_user_password as get_user_password_db
 from .db import create_user as create_user_db
+from .db import get_user_session as get_user_session_db
 from .db import update_user_session as update_user_session_db
 from .db import create_user_session as create_user_session_db
+from .db import delete_user_session as delete_user_session_db
+
 
 
 '''
@@ -30,7 +37,7 @@ pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 @router.post('/register')
 async def register_user(
         new_user: CreateUser, 
-        session: AsyncSession = Depends(get_async_session)):
+        session: AsyncSession = Depends(get_db_session)):
     
     hashed_password = pwd_context.hash(new_user.password)
     user_data = new_user.dict()
@@ -48,8 +55,9 @@ async def register_user(
 
 @router.post('/login')
 async def login_user(
+        response: Response,
         get_user: LoginUser, 
-        session: AsyncSession = Depends(get_async_session)):
+        session: AsyncSession = Depends(get_db_session)):
     
     try: # отрабатывает если были введены неверные данные
         user = await get_user_password_db(get_user.email, session)
@@ -71,38 +79,61 @@ async def login_user(
         user_id=user['id'],
         session=session
     )
-    return {'refresh_token': refresh_token, 
-            'access_token': access_token, 
-            'token_type': 'bearer'}
+
+    response.set_cookie(key='session', value=refresh_token, httponly=True)
+    return {
+        'session': {
+            'token': refresh_token,
+            'type': 'cookie'}, 
+        'access_token': {
+            'token': access_token,
+            'type': 'bearer'}
+    }
 
 
-@router.post('/token')
-async def update_token(
-        token: RefreshToken, 
-        session: AsyncSession = Depends(get_async_session)):
+@router.put('/token')
+async def update_session(
+        response: Response,
+        session: str | None = Cookie(default=None),
+        db_session: AsyncSession = Depends(get_db_session)):
     
-    token_data = verify_jwt_token(token.refresh_token)
-    if token_data is None:
+    user_session = session # т.к. кука называется "session"
+    try:
+        token_data = verify_refresh_token(user_session)
+    except jwt.ExpiredSignatureError:
+        await delete_user_session_db(user_session, db_session)
+        raise HTTPException(
+            status_code=400, detail='Incorrect token')
+    except jwt.PyJWTError:
         raise HTTPException(
             status_code=400, detail='Incorrect token')
     
-    try: # отрабатывает если был введен неверный токен с верным ключем
-        db_data = await get_data_db(token.refresh_token, session)
-    except ValueError as ex: 
+    
+    try: # проверяет наличие сессии в бд
+        _user_session = await get_user_session_db(user_session, db_session)
+    except ValueError: 
         raise HTTPException(
             status_code=400, detail='Incorrect token')
-    
-    db_token = db_data['session']
 
-    refresh_token, access_token = create_tokens(db_data['user'])
+    token_data['id'] = token_data['user_id'] 
+    # так как в токене поле "user_id" а не "id"
+
+    refresh_token, access_token = create_tokens(token_data)
     await update_user_session_db(
-        old_token=db_token['token'],
+        old_token=user_session,
         new_token=refresh_token,
-        session=session
+        session=db_session
     )
-    return {'refresh_token': refresh_token, 
-            'access_token': access_token, 
-            'token_type': 'bearer'}
+
+    response.set_cookie(key='session', value=refresh_token, httponly=True)
+    return {
+        'session': {
+            'token': refresh_token,
+            'type': 'cookie'}, 
+        'access_token': {
+            'token': access_token,
+            'type': 'bearer'}
+    }
 
 
 

@@ -1,11 +1,9 @@
-from typing import Annotated
-
 from fastapi import Depends, Header
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database import get_async_session
-from .jwt import verify_jwt_token
+from ..database import get_session as get_db_session
+from .jwt import verify_access_token
 from .db import get_user as get_user_db
 from .db import get_user_roles as get_user_roles_db
 
@@ -16,16 +14,15 @@ from .db import get_user_roles as get_user_roles_db
 async def verify_token(
         Authorization: str|None = Header()) -> dict:
 
-    decoded_data = verify_jwt_token(Authorization.split()[1])
+    decoded_data = verify_access_token(Authorization.split()[1])
     if decoded_data is None:
         raise HTTPException(
             status_code=400, detail='Invalid token')
     return decoded_data
 
-
 async def get_user(
         token_data: dict = Depends(verify_token), 
-        session: AsyncSession = Depends(get_async_session)) -> dict:
+        session: AsyncSession = Depends(get_db_session)) -> dict:
     
     try:
         user = await get_user_db(token_data['email'], session)
@@ -37,7 +34,7 @@ async def get_user(
 
 async def get_user_role(
         token_data: dict = Depends(verify_token), 
-        session: AsyncSession = Depends(get_async_session)) -> dict:
+        session: AsyncSession = Depends(get_db_session)) -> dict:
     
     try:
         user = await get_user_roles_db(token_data['email'], session)

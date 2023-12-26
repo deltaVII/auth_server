@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth.main import has_user_role, get_user, verify_token
 from ..auth.db import add_user_role as add_user_role_db
 from ..auth.db import add_role as add_role_db
-from ..database import get_async_session
+from ..database import get_session as get_db_session
 
 router = APIRouter(
     prefix='/test_auth',
@@ -34,7 +34,7 @@ async def get_user_me(
 async def get_user_me(
         role: str,
         current_user: dict = Depends(get_user),
-        session: AsyncSession = Depends(get_async_session)):
+        session: AsyncSession = Depends(get_db_session)):
     
     try:
         await add_user_role_db(current_user, role, session)
@@ -46,7 +46,7 @@ async def get_user_me(
 @router.post('/add_role')
 async def get_user_me(
         role: str,
-        session: AsyncSession = Depends(get_async_session)):
+        session: AsyncSession = Depends(get_db_session)):
     
     await add_role_db(role, session)
 

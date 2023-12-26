@@ -1,4 +1,4 @@
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
@@ -75,6 +75,8 @@ async def create_user(
     except IntegrityError:
         raise ValueError(f'Email:{user_data["email"]} already registered')
 
+
+# хуйня устаревшая
 async def get_session_with_user(
         token: str, 
         session: AsyncSession) -> dict:
@@ -103,17 +105,25 @@ async def get_session_with_user(
     return data
 
 
-async def update_user_session(
-        old_token: str, 
-        new_token: str, 
-        session: AsyncSession) -> None:
+async def get_user_session(
+        token: str,
+        db_session: AsyncSession) -> dict:
+    
+    query = select(UserSession) \
+    .where(UserSession.token == token)
+    db_token = await db_session.execute(query)
+    db_token = db_token.scalar()
+    if db_token is None:
+        raise ValueError(f'token:{token} is not found')
+    
+    data = {
+        'user_id': db_token.user_id,
+        'token': db_token.token,
+        'created_at': db_token.created_at,
+        'update_at': db_token.update_at,
+    }
+    return data
 
-    query_update = update(UserSession) \
-        .where(UserSession.token == old_token) \
-        .values(token=new_token)
-    await session.execute(query_update)
-
-    await session.commit()
 
 async def create_user_session(
         token: str, 
@@ -127,6 +137,31 @@ async def create_user_session(
     session.add(new_token)
 
     await session.commit()
+
+
+async def update_user_session(
+        old_token: str, 
+        new_token: str, 
+        session: AsyncSession) -> None:
+
+    query_update = update(UserSession) \
+        .where(UserSession.token == old_token) \
+        .values(token=new_token)
+    await session.execute(query_update)
+
+    await session.commit()
+
+
+async def delete_user_session(
+        token: str, 
+        session: AsyncSession) -> None:
+
+    query_update = delete(UserSession) \
+        .where(UserSession.token == token)
+    await session.execute(query_update)
+
+    await session.commit()
+
 
 
 async def add_user_role(
