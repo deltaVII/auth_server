@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 
+from .exceptions import NotFoundError, UniqueValueError
 from .models import User
 from .models import UserSession
 from .models import UserRole, Role
@@ -26,7 +27,7 @@ async def get_user_password(
     user = user.scalar()
     
     if user is None:
-        raise ValueError(f'user with the email:{user_email} was not found')
+        raise NotFoundError(f'user with the email:{user_email} is not found')
 
     data = {
         'id': user.id,
@@ -48,7 +49,7 @@ async def get_user_roles(
     user = user.scalar()
 
     if user is None:
-        raise ValueError(f'user with the email:{user_email} is not found')
+        raise NotFoundError(f'user with the email:{user_email} is not found')
     
     data = {
         'id': user.id,
@@ -73,7 +74,9 @@ async def create_user(
     try:
         await session.commit()
     except IntegrityError:
-        raise ValueError(f'Email:{user_data["email"]} already registered')
+        raise UniqueValueError(f'Email:{user_data["email"]} 
+                               or username:{user_data["email"]} 
+                               already registered')
 
 
 # хуйня устаревшая
@@ -87,7 +90,7 @@ async def get_session_with_user(
     db_token = await session.execute(query)
     db_token = db_token.scalar()
     if db_token is None:
-        raise ValueError(f'token:{token} is not found')
+        raise NotFoundError(f'token:{token} is not found')
 
     data = {
         'session': {
@@ -114,7 +117,7 @@ async def get_user_session(
     db_token = await db_session.execute(query)
     db_token = db_token.scalar()
     if db_token is None:
-        raise ValueError(f'token:{token} is not found')
+        raise NotFoundError(f'token:{token} is not found')
     
     data = {
         'user_id': db_token.user_id,

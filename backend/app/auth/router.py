@@ -2,24 +2,20 @@ import jwt
 
 from fastapi import APIRouter, Depends
 from fastapi import Cookie, Response
-Response
 from fastapi import HTTPException
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
 
 from ..database import get_session as get_db_session
+from .exceptions import NotFoundError, UniqueValueError
 from .jwt import create_tokens, verify_refresh_token
 from .schemas import CreateUser, LoginUser
-from .schemas import RefreshToken
-from .db import get_session_with_user as get_data_db
 from .db import get_user_password as get_user_password_db
 from .db import create_user as create_user_db
 from .db import get_user_session as get_user_session_db
 from .db import update_user_session as update_user_session_db
 from .db import create_user_session as create_user_session_db
 from .db import delete_user_session as delete_user_session_db
-from .main import verify_token
 
 
 '''
@@ -47,7 +43,7 @@ async def register_user(
             user_data,
             session
         )
-    except ValueError:
+    except UniqueValueError:
         raise HTTPException(
             status_code=409, detail='Email already registered')
     return {'status': '201'}
@@ -61,7 +57,7 @@ async def login_user(
     
     try: # отрабатывает если были введены неверные данные
         user = await get_user_password_db(get_user.email, session)
-    except ValueError as ex:
+    except NotFoundError as ex:
         raise HTTPException(
             status_code=400, detail='Incorrect username or password')
 
@@ -115,7 +111,7 @@ async def update_session(
     
     try: # проверяет наличие сессии в бд
         _user_session = await get_user_session_db(user_session, db_session)
-    except ValueError: 
+    except NotFoundError: 
         raise HTTPException(
             status_code=400, detail='Incorrect token')
 

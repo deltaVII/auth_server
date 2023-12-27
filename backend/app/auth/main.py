@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_session as get_db_session
+from .exceptions import NotFoundError
 from .jwt import verify_access_token
 from .db import get_user as get_user_db
 from .db import get_user_roles as get_user_roles_db
@@ -26,7 +27,7 @@ async def get_user(
     
     try:
         user = await get_user_db(token_data['email'], session)
-    except ValueError:
+    except NotFoundError:
         raise HTTPException(
             status_code=400, detail='Incorrect username or password')
     return user
@@ -38,7 +39,7 @@ async def get_user_role(
     
     try:
         user = await get_user_roles_db(token_data['email'], session)
-    except ValueError:
+    except NotFoundError:
         raise HTTPException(
             status_code=400, detail='Incorrect username or password')
     return user
