@@ -12,12 +12,6 @@ router = APIRouter(
     tags=['Test']
 )
 
-@router.get('/has_role/')
-async def get_resource_data(
-        current_user: dict = Depends(has_user_role('test_role'))):
-
-    return {'message': 'Welcome, test_role!'}
-
 @router.get('/me')
 async def get_user_me(
         current_user: dict = Depends(get_user)):
@@ -30,7 +24,13 @@ async def get_user_me(
 
     return current_user
 
-@router.post('/add_user_role')
+@router.get('/has_role/')
+async def get_resource_data(
+        current_user: dict = Depends(has_user_role('test_role'))):
+
+    return {'message': 'Welcome, test_role!'}
+
+@router.post('/user_role')
 async def get_user_me(
         role: str,
         current_user: dict = Depends(get_user),
@@ -43,7 +43,7 @@ async def get_user_me(
             status_code=400, detail='Incorrect role')
     return {'status': '200'}
 
-@router.post('/add_role')
+@router.post('/role')
 async def get_user_me(
         role: str,
         session: AsyncSession = Depends(get_db_session)):
@@ -51,3 +51,4 @@ async def get_user_me(
     await add_role_db(role, session)
 
     return {'status': '200'}
+

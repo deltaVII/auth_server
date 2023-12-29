@@ -46,7 +46,7 @@ async def register_user(
     except UniqueValueError:
         raise HTTPException(
             status_code=409, detail='Email already registered')
-    return {'status': '201'}
+    return {'status': '200'}
 
 
 @router.post('/login')
@@ -153,4 +153,3 @@ async def logout(
 
     return {'status': '200'}
     
-

@@ -74,9 +74,9 @@ async def create_user(
     try:
         await session.commit()
     except IntegrityError:
-        raise UniqueValueError(f'Email:{user_data["email"]} 
-                               or username:{user_data["email"]} 
-                               already registered')
+        raise UniqueValueError(f'Email:{user_data["email"]}' +
+                               f'or username:{user_data["email"]}' +
+                               f'already registered')
 
 
 # хуйня устаревшая
@@ -138,9 +138,10 @@ async def create_user_session(
         user_id=user_id,
     )
     session.add(new_token)
-
-    await session.commit()
-
+    try: # зачем что-то делать если токен уже есть базе
+        await session.commit()
+    except IntegrityError:
+        pass
 
 async def update_user_session(
         old_token: str, 

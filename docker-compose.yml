@@ -25,6 +25,20 @@ services:
     networks:
       - custom
 
+  test_database:
+    container_name: postgres_testdb
+    image: postgres:15.4-alpine
+    restart: always
+
+    ports: 
+      - "54320:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=tapwd
+      - POSTGRES_DB=test_db
+    networks:
+      - custom
+
 networks:
   custom:
     driver: bridge
